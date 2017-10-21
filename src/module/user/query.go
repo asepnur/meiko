@@ -1,66 +1,107 @@
 package user
 
 const (
-	insertNewUserQuery = `
-		INSERT INTO
-			users(
-				id,
-				name,
-				email,
-				password,
-				created_at,
-				updated_at
-			)
-		VALUES (
-			(%d),
-			('%s'),
-			('%s'),
-			(md5('%s')),
-			NOW(),
-			NOW()
-		)
-	`
-	getUserByIDQuery = `
+	queryGet        = "SELECT %s FROM users"
+	querySelect     = "SELECT %s FROM users"
+	queryInsert     = "INSERT INTO users (%s) VALUES (%s)"
+	queryUpdate     = "UPDATE users SET %s"
+	querySelectByID = `
 		SELECT
-			id,
-			name,
-			gender,
-			college,
-			note,
-			rolegroups_id,
-			status
+			%s
 		FROM
 			users
 		WHERE
-			id = (%d)
+			id IN (%s);
 	`
-
-	getUserEmailQuery = `
+	queryGetByEmail = `
 		SELECT
-			id,
-			name,
-			gender,
-			college
+			%s
 		FROM
 			users
 		WHERE
 			email = ('%s')
+		LIMIT 1;
 	`
-
-	getUserLoginQuery = `
+	queryGetByIdentityCode = `
+		SELECT
+			%s
+		FROM
+			users
+		WHERE
+			identity_code = (%d)
+		LIMIT 1;
+	`
+	querySignIn = `
 		SELECT
 			id,
 			name,
+			email,
 			gender,
-			college,
 			note,
-			rolegroups_id,
-			status
+			status,
+			identity_code,
+			line_id,
+			phone,
+			rolegroups_id
 		FROM
 			users
 		WHERE
 			email = ('%s') AND
-			password = (md5('%s'))
+			password = ('%s')
+		LIMIT 1;
+	`
+	querySignUp = `
+		INSERT INTO
+			users (
+				name,
+				email,
+				password,
+				identity_code,
+				created_at,
+				updated_at
+			) VALUES (
+				('%s'),
+				('%s'),
+				('%s'),
+				(%d),
+				NOW(),
+				NOW()
+			);
+	`
+	queryUpdateToVerified = `
+		UPDATE
+			users
+		SET
+			status = (%d),
+			email_verification_code = NULL,
+			email_verification_expire_date = NULL,
+			email_verification_attempt = NULL,
+			updated_at = NOW()
+		WHERE
+			identity_code = (%d);
+	`
+	queryUpdateStatus = `
+		UPDATE
+			users
+		SET
+			status = (%d),
+			updated_at = NOW()
+		WHERE
+			identity_code = (%d);
+	`
+	querySelectDashboard = `
+		SELECT
+			identity_code,
+			name,
+			email,
+			status
+		FROM
+			users
+		WHERE
+			(status = (%d) OR status = (%d)) AND
+			id != (%d)
+		LIMIT %d
+		OFFSET %d;
 	`
 
 	generateVerificationQuery = `
@@ -72,7 +113,7 @@ const (
 			email_verification_attempt = 0,
 			updated_at = NOW()
 		WHERE
-			id = (%d)
+			identity_code = (%d);
 	`
 
 	getConfirmationQuery = `
@@ -85,6 +126,7 @@ const (
 		WHERE
 			email = ('%s') AND
 			NOW() < email_verification_expire_date
+		LIMIT 1;
 	`
 
 	attemptIncrementQuery = `
@@ -97,16 +139,16 @@ const (
 			id = (%d)
 	`
 
-	setNewPasswordQuery = `
+	queryForgotNewPassword = `
 		UPDATE
 			users
 		SET
-			password = md5('%s'),
+			password = ('%s'),
 			email_verification_code = NULL,
 			email_verification_expire_date = NULL,
 			email_verification_attempt = NULL,
 			updated_at = NOW()
 		WHERE
-			email = ('%s')
+			email = ('%s');
 	`
 )

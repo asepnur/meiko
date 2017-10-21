@@ -4,6 +4,8 @@ import (
 	"flag"
 	"runtime"
 
+	"github.com/melodiez14/meiko/src/util/alias"
+
 	"log"
 
 	"github.com/melodiez14/meiko/src/cron"
@@ -16,11 +18,12 @@ import (
 )
 
 type configuration struct {
-	Database  conn.DatabaseConfig `json:"database"`
-	Redis     conn.RedisConfig    `json:"redis"`
-	Webserver webserver.Config    `json:"webserver"`
-	Email     email.Config        `json:"email"`
-	Auth      auth.Config         `json:"auth"`
+	Directory alias.DirectoryConfig `json:"directory"`
+	Database  conn.DatabaseConfig   `json:"database"`
+	Redis     conn.RedisConfig      `json:"redis"`
+	Webserver webserver.Config      `json:"webserver"`
+	Email     email.Config          `json:"email"`
+	Auth      auth.Config           `json:"auth"`
 }
 
 func init() {
@@ -33,12 +36,13 @@ func main() {
 	// load configuration
 	cfgenv := env.Get()
 	config := &configuration{}
-	isLoaded := jsonconfig.Load(&config, "/etc/meiko", cfgenv) || jsonconfig.Load(&config, "./etc/meiko", cfgenv)
+	isLoaded := jsonconfig.Load(&config, "/etc/meiko", cfgenv) || jsonconfig.Load(&config, "./files/etc/meiko", cfgenv)
 	if !isLoaded {
 		log.Fatal("Failed to load configuration")
 	}
 
 	// initiate instance
+	alias.InitDirectory(config.Directory)
 	conn.InitDB(config.Database)
 	conn.InitRedis(config.Redis)
 	cron.Init()

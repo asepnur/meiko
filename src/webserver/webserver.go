@@ -6,10 +6,7 @@ import (
 	"os"
 	"time"
 
-	"fmt"
-
 	"github.com/julienschmidt/httprouter"
-	"github.com/tokopedia/grace"
 )
 
 // Config is used for the setting of web server
@@ -26,15 +23,25 @@ type requestLogger struct {
 func Start(cfg Config) {
 	log.Println("Initializing web server")
 	l := log.New(os.Stdout, "[meiko] ", 0)
-	port := fmt.Sprintf(":%s", cfg.Port)
+
+	port := ":" + cfg.Port
+	if len(cfg.Port) < 1 {
+		port = ":" + os.Getenv("PORT")
+	}
+
 	r := httprouter.New()
 	loadRouter(r)
 
-	grace.Serve(port, requestLogger{Handle: r, Logger: l})
+	http.ListenAndServe(port, requestLogger{Handle: r, Logger: l})
 }
 
 func (rl requestLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
+	// === for development only ===
+	origin := r.Header.Get("Origin")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	// === end for development only ===
 	rl.Handle.ServeHTTP(w, r)
 	log.Printf("[meiko] %s %s in %v", r.Method, r.URL.Path, time.Since(start))
 }
